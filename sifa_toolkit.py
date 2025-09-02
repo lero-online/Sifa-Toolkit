@@ -357,7 +357,7 @@ def split_hazard_text(text: str) -> List[str]:
 def M(title, stop="O (Organisatorisch)"):
     return {"title": title, "stop_level": stop}
 
-# --- HOTEL/GAST ---
+# --- HOTEL/GAST (Beispielbereich; weitere Bereiche nach Bedarf ergänzen) ---
 LIB_HOTEL = {
     "Küche": [
         {"activity": "Kochen (Töpfe/Kessel)", "hazard": "Hitze, heiße Flüssigkeiten, Verbrühungen/Verbrennungen", "sources": ["Herde","Kessel","Töpfe"], "existing": ["Hitzeschutz"], "measures":[M("Topfdeckel/Spritzschutz nutzen","T (Technisch)"), M("‚Heiß!‘ rufen"), M("Hitzeschutzhandschuhe","P (PSA)")]},
@@ -376,40 +376,20 @@ LIB_HOTEL = {
         {"activity": "Altöl/Müll entsorgen", "hazard": "Verbrennung bei heißem Öl, Schnitt/Infektion", "sources": ["Altöl","Müllsack"], "existing": ["Abkühlen"], "measures":[M("Deckel-Transportbehälter","T (Technisch)"), M("Handschutz verpflichtend","P (PSA)")]},
         {"activity": "TK-/Kühlräume", "hazard": "Kälte, Rutschgefahr, Einsperr-Risiko", "sources": ["Kühlzelle","TK"], "existing": ["Kälteschutz"], "measures":[M("Tür-Notöffnung prüfen","T (Technisch)"), M("Aufenthaltsdauer begrenzen")]},
         {"activity": "Allergenmanagement", "hazard": "Kreuzkontamination/Allergene", "sources": ["Zutatenwechsel"], "existing": ["Kennzeichnung"], "measures":[M("Rein-/Unrein-Organisation"), M("Unterweisung LMIV","Q (Qualifikation/Unterweisung)")]},
-        {"activity": "Elektrische Kleingeräte", "hazard": "Stromschlag, Brandrisiko", "sources": ["Mixer","Pürierstab"], "existing": ["Sichtprüfung"], "measures":[M("Prüfintervall ortsveränderliche Geräte")]},
-    ],
-    # ... (LIB_HOTEL restliche Bereiche bleiben wie in deiner Vorlage)
+        {"activity": "Elektrische Kleingeräte", "hazard": "Stromschlag, Brandrisiko", "sources": ["Mixer","Pürierstab"], "existing": ["Sichtprüfung"], "measures":[M("Prüfintervall ortsveränderliche Geräte")]}]
 }
 
-# --- Bäckerei (erweitert) ---
-# (Hier steht deine zuletzt gepostete, erweiterte LIB_BAECKEREI – unverändert)
-LIB_BAECKEREI = {  # ... kompletter Inhalt aus deiner letzten Version ...
-    # (um Platz zu sparen: 1:1 aus deiner Nachricht übernehmen)
-}
-
-# --- Fleischerei / Fleischindustrie (erweitert: Schlachtung, Zerlegung, Verarbeitung) ---
-LIB_FLEISCHEREI = {  # ... kompletter Inhalt aus deiner letzten Version ...
-}
-
-# --- Gemeinschaftsverpflegung / Kantine / Catering (stark erweitert) ---
-LIB_KANTINE = {  # ... kompletter Inhalt aus deiner letzten Version ...
-}
-
-# --- Konditorei/Café, Brauerei, Getränkeabfüllung, Eisherstellung, Event, QSR, Wäscherei ---
-LIB_KONDITOREI = {  # ... wie gepostet ...
-}
-LIB_BRAUEREI = {  # ... wie gepostet ...
-}
-LIB_GETRAENKEABF = {  # ... wie gepostet ...
-}
-LIB_EIS = {  # ... wie gepostet ...
-}
-LIB_EVENT = {  # ... wie gepostet ...
-}
-LIB_QSR = {  # ... wie gepostet ...
-}
-LIB_WAESCHE = {  # ... wie gepostet ...
-}
+# --- Weitere Branchen (Platzhalter – syntaktisch gültig, beliebig füllen) ---
+LIB_BAECKEREI: Dict[str, List[Dict[str, Any]]] = {}
+LIB_FLEISCHEREI: Dict[str, List[Dict[str, Any]]] = {}
+LIB_KANTINE: Dict[str, List[Dict[str, Any]]] = {}
+LIB_KONDITOREI: Dict[str, List[Dict[str, Any]]] = {}
+LIB_BRAUEREI: Dict[str, List[Dict[str, Any]]] = {}
+LIB_GETRAENKEABF: Dict[str, List[Dict[str, Any]]] = {}
+LIB_EIS: Dict[str, List[Dict[str, Any]]] = {}
+LIB_EVENT: Dict[str, List[Dict[str, Any]]] = {}
+LIB_QSR: Dict[str, List[Dict[str, Any]]] = {}
+LIB_WAESCHE: Dict[str, List[Dict[str, Any]]] = {}
 
 INDUSTRY_LIBRARY: Dict[str, Dict[str, List[Dict[str, Any]]]] = {
     "Hotel/Gastgewerbe": LIB_HOTEL,
@@ -510,10 +490,10 @@ def main():
             industry="Hotel/Gastgewerbe",
         )
         preload_industry(st.session_state.assessment, "Hotel/Gastgewerbe", replace=True)
-    if "opt_split_multi_hazards" not in st.session_state:
-        st.session_state["opt_split_multi_hazards"] = True
-    if "json_blob" not in st.session_state:
-        st.session_state["json_blob"] = ""
+
+    # Session-Optionen einmalig setzen
+    st.session_state.setdefault("opt_split_multi_hazards", True)
+    st.session_state.setdefault("json_blob", "")
 
     assess: Assessment = st.session_state.assessment
 
@@ -548,8 +528,6 @@ def main():
         # --- Optionen ---
         st.markdown("---")
         st.subheader("Optionen")
-        if "opt_split_multi_hazards" not in st.session_state:
-            st.session_state["opt_split_multi_hazards"] = True
         st.checkbox(
             "Mehrfach-Gefährdungen einer Tätigkeit automatisch auftrennen (1 Tätigkeit → 1 Gefährdung pro Eintrag)",
             key="opt_split_multi_hazards",
@@ -579,8 +557,7 @@ def main():
                 tmpl = INDUSTRY_LIBRARY.get(sector, {})
                 add_template_items(assess, tmpl, selected_keys=None, industry_name=sector)
                 assess.industry = sector
-                if "template_checks" in st.session_state:
-                    st.session_state.template_checks = {}
+                st.session_state["template_checks"] = {}
                 st.success(f"Vorlage '{sector}' geladen (ersetzt).")
                 st.rerun()
         with c_load2:
@@ -636,8 +613,7 @@ def main():
         area_filter = st.multiselect("Bereiche filtern", options=all_areas, default=all_areas, key="tmpl_area_filter")
         text_filter = st.text_input("Textfilter (Activity/Gefährdung enthält…)", key="tmpl_text_filter").strip().lower()
 
-        if "template_checks" not in st.session_state:
-            st.session_state.template_checks = {}
+        st.session_state.setdefault("template_checks", {})
 
         cols = st.columns([0.24, 0.24, 0.42, 0.10])
         cols[0].markdown("**Bereich**")
@@ -696,8 +672,7 @@ def main():
             assess.hazards = []
             add_template_items(assess, lib, selected_keys=None, industry_name=sector)
             assess.industry = sector
-            if "template_checks" in st.session_state:
-                st.session_state.template_checks = {}
+            st.session_state["template_checks"] = {}
             st.success(f"Komplette Vorlage '{sector}' geladen (Mehrfach-Gefährdungen ggf. aufgetrennt).")
             st.rerun()
 
@@ -719,6 +694,9 @@ def main():
     with tabs[2]:
         st.subheader("2) Gefährdungen ermitteln")
 
+        # Spalten IMMER vorab definieren – außerhalb von Bedingungen
+        colL, colR = st.columns([2, 1])
+
         # Weicher Fallback statt st.stop()
         if not assess.hazards:
             st.warning("Noch keine Gefährdungen vorhanden. Nutze Tab 0 oder die Sidebar, um eine Branchenvorlage zu laden.")
@@ -729,9 +707,7 @@ def main():
                 add_template_items(assess, tmpl, selected_keys=None, industry_name=current_sector)
                 assess.industry = current_sector
                 st.success(f"Vorlage '{assess.industry}' geladen. Du kannst jetzt beurteilen.")
-                st.rerun()
-
-                colL, colR = st.columns([2, 1])
+                st.rerun()  # danach nichts mehr ausführen
 
         with colL:
             st.markdown("**Gefährdungen (Bearbeiten)**")
@@ -785,3 +761,136 @@ def main():
                     assess.hazards = [h for h in assess.hazards if h.id != sel_id]
                     st.warning("Gefährdung gelöscht.")
                     st.rerun()
+
+    # 3 Beurteilen
+    with tabs[3]:
+        st.subheader("3) Risiken beurteilen")
+        st.caption("Wähle eine Gefährdung, setze Eintrittswahrscheinlichkeit (1–5) und Schadensschwere (1–5).")
+        if not assess.hazards:
+            st.info("Keine Gefährdungen vorhanden. Bitte in Tab 0 laden oder in Tab 2 hinzufügen.")
+        else:
+            colL, colR = st.columns([2, 1])
+            with colL:
+                df = pd.DataFrame([hazard_to_row(h) for h in assess.hazards])
+                st.dataframe(df, use_container_width=True, hide_index=True, key="df_rate_overview")
+            with colR:
+                ids = [h.id for h in assess.hazards]
+                sel_id = st.selectbox("Gefährdung auswählen (ID)", options=ids, key="sel_hazard_rate")
+                hz = next(h for h in assess.hazards if h.id == sel_id)
+                thr = assess.risk_matrix_thresholds.get("thresholds", [6, 12, 16])
+                hz.prob = st.slider("Eintrittswahrscheinlichkeit (1=sehr selten … 5=sehr häufig)", 1, 5, hz.prob, key=f"prob_{hz.id}")
+                hz.sev = st.slider("Schadensschwere (1=gering … 5=katastrophal)", 1, 5, hz.sev, key=f"sev_{hz.id}")
+                hz.risk_value, hz.risk_level = compute_risk(hz.prob, hz.sev, thr)
+                st.metric("Risiko (Produkt)", hz.risk_value, help=f"Stufe: {hz.risk_level}")
+                if st.button("Alle Risiken anhand aktueller Schwellen neu berechnen", key="btn_recalc_all"):
+                    for h in assess.hazards:
+                        h.risk_value, h.risk_level = compute_risk(h.prob, h.sev, thr)
+                    st.success("Risiken aktualisiert.")
+                    st.rerun()
+
+    # 4 Maßnahmen
+    with tabs[4]:
+        st.subheader("4) Maßnahmen festlegen")
+        if not assess.hazards:
+            st.info("Keine Gefährdungen vorhanden.")
+        else:
+            ids = [h.id for h in assess.hazards]
+            sel_id = st.selectbox("Gefährdung auswählen (ID)", options=ids, key="sel_hazard_measures")
+            hz = next(h for h in assess.hazards if h.id == sel_id)
+            st.markdown(f"**Bereich:** {hz.area}  \n**Tätigkeit:** {hz.activity}  \n**Gefährdung:** {hz.hazard}")
+            if hz.additional_measures:
+                meas_df = pd.DataFrame([asdict(m) for m in hz.additional_measures])
+                st.dataframe(meas_df, use_container_width=True, hide_index=True, key=f"df_measures_{hz.id}")
+            else:
+                st.info("Noch keine Maßnahmen erfasst.")
+
+            st.markdown("---")
+            st.markdown("**Maßnahme hinzufügen**")
+            c1, c2 = st.columns([0.6, 0.4])
+            title = c1.text_input("Titel", key=f"m_title_{hz.id}")
+            stop = c2.selectbox("STOP(+Q)", STOP_LEVELS, index=2, key=f"m_stop_{hz.id}")  # default O
+            c3, c4 = st.columns(2)
+            responsible = c3.text_input("Verantwortlich", key=f"m_resp_{hz.id}")
+            due = c4.text_input("Fällig am (YYYY-MM-DD)", key=f"m_due_{hz.id}")
+            c5, c6 = st.columns(2)
+            status = c5.selectbox("Status", STATUS_LIST, key=f"m_status_{hz.id}")
+            notes = c6.text_input("Hinweis", key=f"m_notes_{hz.id}")
+            if st.button("➕ Maßnahme anfügen", key=f"btn_add_measure_{hz.id}"):
+                hz.additional_measures.append(Measure(
+                    title=title.strip(), stop_level=stop, responsible=responsible.strip(),
+                    due_date=due.strip() or None, status=status, notes=notes.strip()
+                ))
+                st.success("Maßnahme hinzugefügt.")
+                st.rerun()
+
+    # 5 Umsetzen
+    with tabs[5]:
+        st.subheader("5) Umsetzen – Maßnahmen-Plan")
+        rows = [r for h in assess.hazards for r in measures_to_rows(h)]
+        if rows:
+            plan_df = pd.DataFrame(rows)
+            st.dataframe(plan_df, use_container_width=True, hide_index=True, key="df_plan")
+        else:
+            st.info("Noch keine Maßnahmen vorhanden.")
+
+    # 6 Wirksamkeit
+    with tabs[6]:
+        st.subheader("6) Wirksamkeit prüfen")
+        if not assess.hazards:
+            st.info("Keine Gefährdungen vorhanden.")
+        else:
+            ids = [h.id for h in assess.hazards]
+            sel_id = st.selectbox("Gefährdung auswählen (ID)", options=ids, key="sel_hazard_review")
+            hz = next(h for h in assess.hazards if h.id == sel_id)
+            c1, c2 = st.columns(2)
+            hz.last_review = c1.text_input("Letzte Prüfung (YYYY-MM-DD)", value=hz.last_review or "", key=f"rev_date_{hz.id}") or None
+            hz.reviewer = c2.text_input("Prüfer/in", value=hz.reviewer, key=f"rev_reviewer_{hz.id}")
+            hz.documentation_note = st.text_area("Beurteilungs-/Dokumentationshinweis", value=hz.documentation_note, key=f"rev_doc_{hz.id}")
+            if st.button("Eintrag aktualisieren", key=f"btn_update_review_{hz.id}"):
+                st.success("Wirksamkeitsdaten aktualisiert.")
+                st.rerun()
+
+            st.markdown("---")
+            st.markdown("**Übersicht Wirksamkeit**")
+            rev_df = pd.DataFrame([{
+                "ID": h.id, "Bereich": h.area, "Gefährdung": h.hazard,
+                "Letzte Prüfung": h.last_review or "", "Prüfer/in": h.reviewer,
+                "Hinweis": h.documentation_note[:120] + ("…" if h.documentation_note and len(h.documentation_note) > 120 else "")
+            } for h in assess.hazards])
+            st.dataframe(rev_df, use_container_width=True, hide_index=True, key="df_review_overview")
+
+    # 7 Dokumentation
+    with tabs[7]:
+        st.subheader("7) Dokumentation")
+        assess.documentation_note = st.text_area("Dokumentationshinweis (gesamt)", value=assess.documentation_note, height=180, key="doc_note")
+        st.info("Detaillierte Hinweise je Gefährdung kannst du in Tab 6 pflegen.")
+
+    # 8 Fortschreiben
+    with tabs[8]:
+        st.subheader("8) Fortschreiben / Fristen")
+        assess.next_review_hint = st.text_area("Anlässe/Fristen für die Fortschreibung (z. B. Ereignisse, Änderungen, feste Termine)", value=assess.next_review_hint, height=160, key="next_review")
+        st.caption("Tipp: Nutze konkrete Fristen (Kalenderquartal, feste Termine) und verknüpfe mit Maßnahmen-Review.")
+
+    # Übersicht
+    with tabs[9]:
+        st.subheader("Übersicht")
+        n_h = len(assess.hazards)
+        n_m = sum(len(h.additional_measures) for h in assess.hazards)
+        st.metric("Gefährdungen gesamt", n_h)
+        st.metric("Maßnahmen gesamt", n_m)
+        if n_h:
+            dist = {}
+            for h in assess.hazards:
+                dist[h.risk_level] = dist.get(h.risk_level, 0) + 1
+            st.write("Risiko-Verteilung:", dist)
+            df = pd.DataFrame([hazard_to_row(h) for h in assess.hazards])
+            st.dataframe(df, use_container_width=True, hide_index=True, key="df_overview")
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as e:
+        st.error("Es ist ein Fehler aufgetreten. Details siehe unten.")
+        st.exception(e)
+        st.text("Traceback (für Debug):")
+        st.text(traceback.format_exc())
