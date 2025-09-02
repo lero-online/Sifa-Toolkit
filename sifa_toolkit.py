@@ -370,5 +370,7 @@ def init_session():
     for key, df in DEFAULT_TABLES.items():
         if key not in st.session_state:
             st.session_state[key] = df.copy()
-    if "opt_split_multi_hazards" not in st.session_state
+    if "opt_split_multi_hazards" not in st.session_state:
+    st.session_state["opt_split_multi_hazards"] = True
+
 
