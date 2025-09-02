@@ -731,7 +731,57 @@ def main():
                 st.success(f"Vorlage '{assess.industry}' geladen. Du kannst jetzt beurteilen.")
                 st.rerun()
 
-        colL, colR = st.columns([2,1])
+                colL, colR = st.columns([2, 1])
 
         with colL:
-            st.markdown("**Gefährdungen (Bearbeiten)**
+            st.markdown("**Gefährdungen (Bearbeiten)**")
+            if assess.hazards:
+                df = pd.DataFrame([hazard_to_row(h) for h in assess.hazards])
+                st.dataframe(df, use_container_width=True, hide_index=True, key="df_hazards")
+            else:
+                st.info("Nutze Tab 0 oder die Sidebar, um eine Branchenvorlage zu laden.")
+
+            with st.expander("➕ Gefährdung manuell hinzufügen"):
+                col1, col2 = st.columns(2)
+                known_areas = sorted(
+                    {h.area for h in assess.hazards}
+                    | set(INDUSTRY_LIBRARY.get(assess.industry, {}).keys())
+                    | {"Sonstiges"}
+                )
+                area = col1.selectbox("Bereich", known_areas, key="add_area")
+                activity = col2.text_input("Tätigkeit", key="add_activity")
+                hazard_txt = st.text_input(
+                    "Gefährdung (bei mehreren: Komma/Slash/‚und‘ trennt in Einzeleinträge)",
+                    key="add_hazard"
+                )
+                sources = st.text_input("Quellen/Einwirkungen (durch ; trennen)", key="add_sources")
+                existing = st.text_input("Bestehende Maßnahmen (durch ; trennen)", key="add_existing")
+                if st.button("Hinzufügen", key="btn_add_hazard"):
+                    hazards_list = split_hazard_text(hazard_txt) if st.session_state.get("opt_split_multi_hazards", True) else [hazard_txt]
+                    for hz_text in hazards_list:
+                        assess.hazards.append(Hazard(
+                            id=new_id(), area=area, activity=activity, hazard=hz_text,
+                            sources=[s.strip() for s in sources.split(";") if s.strip()],
+                            existing_controls=[e.strip() for e in existing.split(";") if e.strip()]
+                        ))
+                    st.success(f"{len(hazards_list)} Eintrag(e) hinzugefügt (1 Tätigkeit → 1 Gefährdung je Eintrag).")
+
+        with colR:
+            st.markdown("**Auswahl & Details**")
+            ids = [h.id for h in assess.hazards]
+            sel_id = st.selectbox("Gefährdung auswählen (ID)", options=["--"] + ids, index=0, key="sel_hazard_edit")
+            if sel_id != "--":
+                hz = next(h for h in assess.hazards if h.id == sel_id)
+                all_areas = list(INDUSTRY_LIBRARY.get(assess.industry, {}).keys()) + ["Sonstiges"]
+                idx = all_areas.index(hz.area) if hz.area in all_areas else len(all_areas) - 1
+                hz.area = st.selectbox("Bereich", options=all_areas, index=idx, key=f"edit_area_{hz.id}")
+                hz.activity = st.text_input("Tätigkeit", value=hz.activity, key=f"edit_activity_{hz.id}")
+                hz.hazard = st.text_input("Gefährdung (nur eine pro Eintrag)", value=hz.hazard, key=f"edit_hazard_{hz.id}")
+                src = st.text_area("Quellen/Einwirkungen", value="; ".join(hz.sources), key=f"edit_sources_{hz.id}")
+                hz.sources = [s.strip() for s in src.split(";") if s.strip()]
+                ex = st.text_area("Bestehende Maßnahmen", value="; ".join(hz.existing_controls), key=f"edit_existing_{hz.id}")
+                hz.existing_controls = [e.strip() for e in ex.split(";") if e.strip()]
+                if st.button("🗑️ Löschen", key=f"btn_delete_{hz.id}"):
+                    assess.hazards = [h for h in assess.hazards if h.id != sel_id]
+                    st.warning("Gefährdung gelöscht.")
+                    st.rerun()
