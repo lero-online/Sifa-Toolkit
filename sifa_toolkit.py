@@ -371,6 +371,6 @@ def init_session():
         if key not in st.session_state:
             st.session_state[key] = df.copy()
     if "opt_split_multi_hazards" not in st.session_state:
-    st.session_state["opt_split_multi_hazards"] = True
+        st.session_state["opt_split_multi_hazards"] = True
 
 
